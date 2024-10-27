@@ -1,2 +1,2 @@
-from flux_orm.cs.models import *
-from flux_orm.cs.utils_models import *
+from flux_orm.models.models import *
+from flux_orm.models.utils_models import *

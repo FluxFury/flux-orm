@@ -1,11 +1,13 @@
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
 from uuid6 import uuid6
 
 from flux_orm.database import Model
-from flux_orm.cs import mapped_column, ForeignKey, UUID, Mapped
+from flux_orm.models import mapped_column, ForeignKey, UUID, Mapped
 
 ''' Ориентировочная последовательность взаимодействия с таблицами - сверху вниз'''
 '''THESE TABLES WERE CREATED ACCORDING TO SOLID+ PRINCIPLES'''
@@ -14,7 +16,7 @@ from flux_orm.cs import mapped_column, ForeignKey, UUID, Mapped
 class Sport(Model):
     __tablename__ = "sport"
     sport_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
-    name: Mapped[str]
+    name: Mapped[str] = mapped_column(unique=True)
     description: Mapped[str | None]
     image_url: Mapped[str | None]
     competitions: Mapped[list["Competition"]] = relationship(
@@ -28,8 +30,11 @@ class Sport(Model):
 class Competition(Model):
     __tablename__ = "competition"
     competition_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
-    name: Mapped[str]
     sport_id: Mapped[UUID] = mapped_column(ForeignKey('sport.sport_id'))
+    name: Mapped[str] = mapped_column(unique=True)
+    prize_pool: Mapped[str | None]
+    location: Mapped[str | None]
+    start_date: Mapped[datetime | None]
     description: Mapped[str | None]
     image_url: Mapped[str | None]
     sport: Mapped["Sport"] = relationship(
@@ -88,7 +93,7 @@ class TeamInCompetition(Model):
                                           primary_key=True)
     competition_id: Mapped[UUID] = mapped_column(ForeignKey('competition.competition_id'),
                                                  primary_key=True,
-                                                )
+                                                 )
 
     place: Mapped[int | None]
     stats = mapped_column(JSONB)
@@ -97,7 +102,7 @@ class TeamInCompetition(Model):
 class Team(Model):
     __tablename__ = "team"
     team_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
-    name: Mapped[str]
+    name: Mapped[str] = mapped_column(unique=True)
     matches: Mapped[list["Match"] | None] = relationship(
         back_populates="match_teams",
         uselist=True,
@@ -118,7 +123,7 @@ class Team(Model):
         cascade="save-update, expunge, merge, delete",
         secondary="player_in_team",
         lazy="joined",
-        
+
     )
     coaches: Mapped[list["Coach"] | None] = relationship(
         back_populates="teams",
@@ -154,14 +159,14 @@ class PlayerInTeam(Model):
 class TeamMember(Model):
     __tablename__ = "team_member"
     player_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
-    team: Mapped[list["Team"]] = relationship("Team",
-                                              back_populates="members",
-                                              uselist=True,
-                                              secondary="player_in_team",
-                                              cascade="save-update, expunge, merge",
-                                              lazy="joined",
-                                              )
-    nickname: Mapped[str]
+    team: Mapped[list["Team"]] = relationship(
+        back_populates="members",
+        uselist=True,
+        secondary="player_in_team",
+        cascade="save-update, expunge, merge",
+        lazy="joined",
+    )
+    name: Mapped[str] = mapped_column(unique=True)
     age: Mapped[int | None]
     country: Mapped[str | None]
     stats = mapped_column(JSONB)
@@ -180,19 +185,24 @@ class TeamInMatch(Model):
 class MatchStatus(Model):
     __tablename__ = "match_status"
     status_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
-    match: Mapped[list["Match"]] = relationship(back_populates="match_status",
-                                          uselist=True,
+    match: Mapped["Match"] = relationship(back_populates="match_status",
+                                          uselist=False,
                                           cascade="save-update, expunge, merge",
                                           lazy="joined")
     name: Mapped[str]
-    status = mapped_column(JSONB, nullable=True)
+    status: Mapped[dict[str, str] | None] = mapped_column(MutableDict.as_mutable(JSONB()))
     image_url: Mapped[str | None]
 
 
 class Match(Model):
     __tablename__ = "match"
+    __table_args__ = (
+        UniqueConstraint('match_name', 'planned_start_datetime',
+                         name='match_name_planned_start_datetime_unique'),
+    )
     match_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
     match_name: Mapped[str]
+    match_streams: Mapped[dict[str, tuple[str, str, str, str]] | None] = mapped_column(MutableDict.as_mutable(JSONB()))
     match_status: Mapped["MatchStatus"] = relationship(
         back_populates="match",
         uselist=False,
@@ -219,24 +229,24 @@ class Match(Model):
         cascade="save-update, expunge, merge, delete",
         lazy="joined"
     )
-    competition_id: Mapped[UUID] = mapped_column(ForeignKey('competition.competition_id'))
+    competition_id: Mapped[UUID | None] = mapped_column(ForeignKey('competition.competition_id'))
     competition: Mapped["Competition"] = relationship(
         back_populates="matches",
         uselist=False,
         cascade="save-update, expunge, merge",
         lazy="joined"
     )
-    status_id: Mapped[UUID] = mapped_column(ForeignKey('match_status.status_id'), unique=True)
+    status_id: Mapped[UUID | None] = mapped_column(ForeignKey('match_status.status_id'))
     planned_start_datetime: Mapped[datetime | None]
     end_datetime: Mapped[datetime | None]
 
 
 class AIStatementInMatch(Model):
     __tablename__ = "ai_statement_in_match"
-    statement_fk: Mapped[UUID] = mapped_column(ForeignKey('match_ai_statement.statement_id'),
+    statement_id: Mapped[UUID] = mapped_column(ForeignKey('match_ai_statement.statement_id'),
                                                primary_key=True,
                                                )
-    match_fk: Mapped[UUID] = mapped_column(ForeignKey('match.match_id'), primary_key=True)
+    match_id: Mapped[UUID] = mapped_column(ForeignKey('match.match_id'), primary_key=True)
 
 
 class MatchAIStatement(Model):
@@ -245,7 +255,7 @@ class MatchAIStatement(Model):
     matches: Mapped[list["Match"] | None] = relationship(back_populates="ai_statements",
                                                          uselist=True,
                                                          secondary="ai_statement_in_match",
-                                                         cascade="save-update, expunge, merge, delete",
+                                                         cascade="save-update, expunge, merge",
                                                          lazy="joined")
 
 
@@ -266,8 +276,8 @@ class Coach(Model):
 
 class CoachInTeam(Model):
     __tablename__ = "coach_in_team"
-    coach_fk: Mapped[UUID] = mapped_column(ForeignKey('coach.coach_id'), primary_key=True)
-    team_fk: Mapped[UUID] = mapped_column(ForeignKey('team.team_id'), primary_key=True)
+    coach_id: Mapped[UUID] = mapped_column(ForeignKey('coach.coach_id'), primary_key=True)
+    team_id: Mapped[UUID] = mapped_column(ForeignKey('team.team_id'), primary_key=True)
 
 
 class Substitution(Model):
@@ -284,4 +294,4 @@ class Substitution(Model):
     prev_player_id: Mapped[UUID] = mapped_column(ForeignKey('team_member.player_id'), primary_key=True)
     new_player_id: Mapped[UUID] = mapped_column(ForeignKey('team_member.player_id'), primary_key=True)
     time: Mapped[int | None]
-    team_fk: Mapped[UUID] = mapped_column(ForeignKey('team.team_id'))
+    team_id: Mapped[UUID] = mapped_column(ForeignKey('team.team_id'))

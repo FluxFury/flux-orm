@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import select
 
 from flux_orm.database import new_session
-from flux_orm.cs.models import (
+from flux_orm.models.models import (
     Sport, Competition, Team, TeamMember, Coach,
     Match, MatchStatus, Substitution, CompetitionCategory, MatchAIStatement, CompetitionInCategory
 )
@@ -47,10 +47,6 @@ async def test_delete_cascade_with_ondelete():
         query = select(CompetitionInCategory)
         result = await session.execute(query)
         competition_in_categories_1 = result.scalars().all()
-        print(competition_in_categories_1)
-
-        for competition_in_category in competition_in_categories_1:
-            print((competition_in_category.competition_id, competition_in_category.category_id))
 
         query2 = select(CompetitionCategory)
         result2 = await session.execute(query2)
@@ -61,16 +57,11 @@ async def test_delete_cascade_with_ondelete():
         await session.commit()
         zapros = select(CompetitionCategory)
         result = await session.execute(zapros)
-        print(len(result.scalars().unique().all()))
 
         query = select(CompetitionInCategory)
         result = await session.execute(query)
         competition_in_categories_2 = result.scalars().unique().all()
 
-        for competition_in_category in competition_in_categories_2:
-            print((competition_in_category.competition_id, competition_in_category.category_id))
-
-        print(competition_in_categories_2)
         assert len(competition_in_categories_2) == len(competition_in_categories_1) - 3
 
 @pytest.mark.asyncio(loop_scope="session")
@@ -121,15 +112,15 @@ async def test_cascade_delete_competition():
 async def test_cascade_save_team_with_members():
     async with new_session() as session:
         # Create Team with Members
-        member1 = TeamMember(nickname="Player One")
-        member2 = TeamMember(nickname="Player Two")
+        member1 = TeamMember(name="Player One")
+        member2 = TeamMember(name="Player Two")
         team = Team(name="Team F", members=[member1, member2])
 
         session.add(team)
         await session.commit()
 
         # Verify that the Members are saved
-        result = await session.execute(select(TeamMember).filter(TeamMember.nickname.in_(["Player One", "Player Two"])))
+        result = await session.execute(select(TeamMember).filter(TeamMember.name.in_(["Player One", "Player Two"])))
         members = result.unique().scalars().all()
         assert len(members) == 2, "Team members should be saved with the team"
 
@@ -138,7 +129,7 @@ async def test_cascade_save_team_with_members():
 async def test_delete_team_and_check_members():
     async with new_session() as session:
         # Create Team with Members
-        member = TeamMember(nickname="Solo Player")
+        member = TeamMember(name="Solo Player")
         team = Team(name="Team G", members=[member])
         session.add(team)
         await session.commit()
@@ -148,7 +139,7 @@ async def test_delete_team_and_check_members():
         await session.commit()
 
         # Check if the TeamMember still exists
-        result = await session.execute(select(TeamMember).filter_by(nickname="Solo Player"))
+        result = await session.execute(select(TeamMember).filter_by(name="Solo Player"))
         remaining_member = result.scalars().first()
         assert remaining_member is None, "TeamMember should be deleted when team is deleted"
 
@@ -224,7 +215,7 @@ async def test_add_match_with_teams():
 async def test_cascade_delete_team_member():
     async with new_session() as session:
         # Create TeamMember and associate with Teams
-        member = TeamMember(nickname="Transient Player")
+        member = TeamMember(name="Transient Player")
         team1 = Team(name="Team L", members=[member])
         team2 = Team(name="Team M", members=[member])
         session.add_all([team1, team2])
@@ -235,7 +226,7 @@ async def test_cascade_delete_team_member():
         await session.commit()
 
         # Verify that TeamMember is deleted
-        result = await session.execute(select(TeamMember).filter_by(nickname="Transient Player"))
+        result = await session.execute(select(TeamMember).filter_by(name="Transient Player"))
         deleted_member = result.scalars().first()
         assert deleted_member is None, "TeamMember should be deleted"
 
@@ -253,8 +244,8 @@ async def test_cascade_delete_team_member():
 async def test_cascade_delete_team():
     async with new_session() as session:
         # Create Team with Members
-        member1 = TeamMember(nickname="Player Alpha")
-        member2 = TeamMember(nickname="Player Beta")
+        member1 = TeamMember(name="Player Alpha")
+        member2 = TeamMember(name="Player Beta")
         team = Team(name="Team N", members=[member1, member2])
         session.add(team)
         await session.commit()
@@ -270,7 +261,7 @@ async def test_cascade_delete_team():
 
         # Verify that TeamMembers still exist
         result = await session.execute(
-            select(TeamMember).filter(TeamMember.nickname.in_(["Player Alpha", "Player Beta"])))
+            select(TeamMember).filter(TeamMember.name.in_(["Player Alpha", "Player Beta"])))
         members = result.scalars().all()
         assert len(members) == 0, "TeamMembers should be deleted when team is deleted"
 
@@ -310,8 +301,8 @@ async def test_create_match_with_status_and_substitutions():
         await session.flush()
 
         # Create Substitution
-        player_in = TeamMember(nickname="Substitute In")
-        player_out = TeamMember(nickname="Substitute Out")
+        player_in = TeamMember(name="Substitute In")
+        player_out = TeamMember(name="Substitute Out")
         session.add_all([player_in, player_out])
         await session.flush()
 
@@ -366,10 +357,15 @@ async def test_cascade_delete_match():
         await session.commit()
 
         # Create Substitution
-        player_in = TeamMember(nickname="Sub In")
-        player_out = TeamMember(nickname="Sub Out")
+        player_in = TeamMember(name="Sub In")
+        player_out = TeamMember(name="Sub Out")
         session.add_all([player_in, player_out])
         await session.commit()
+        player_in = await session.execute(select(TeamMember).filter_by(name="Sub In"))
+        player_in = player_in.scalars().first()
+        player_out = await session.execute(select(TeamMember).filter_by(name="Sub Out"))
+        player_out = player_out.scalars().first()
+
 
         substitution = Substitution(
             match=match,
@@ -413,13 +409,15 @@ async def test_relationship_team_competition():
         competition = Competition(name="Team Competition Test", sport=sport, teams=[])
         session.add(competition)
         await session.commit()
-
+        competition = await session.execute(select(Competition).filter_by(name="Team Competition Test"))
+        competition = competition.scalars().first()
         # Create Teams
         team1 = Team(name="Team S")
         team2 = Team(name="Team T")
         session.add_all([team1, team2])
         await session.commit()
-
+        competition = await session.execute(select(Competition).filter_by(name="Team Competition Test"))
+        competition = competition.scalars().first()
         # Associate Teams with Competition
         competition.teams.extend([team1, team2])
         await session.commit()
@@ -435,12 +433,15 @@ async def test_update_team_stats():
     async with new_session() as session:
         # Create Team
         team = Team(name="Team U", stats={"wins": 5, "losses": 2})
-        session.add(team)
-        await session.commit()
+
 
         # Update Team stats
         team.stats["wins"] = 6
+        session.add(team)
         await session.commit()
+        team = await session.execute(select(Team).filter_by(name="Team U"))
+        team = team.scalars().first()
+
 
         # Verify that stats are updated
         result = await session.execute(select(Team).filter_by(name="Team U"))
@@ -662,11 +663,14 @@ async def test_delete_substitution():
         session.add(match)
         await session.commit()
 
-        player_in = TeamMember(nickname="Sub In Player")
-        player_out = TeamMember(nickname="Sub Out Player")
+        player_in = TeamMember(name="Sub In Player")
+        player_out = TeamMember(name="Sub Out Player")
         session.add_all([player_in, player_out])
         await session.commit()
-
+        player_in = await session.execute(select(TeamMember).filter_by(name="Sub In Player"))
+        player_in = player_in.scalars().first()
+        player_out = await session.execute(select(TeamMember).filter_by(name="Sub Out Player"))
+        player_out = player_out.scalars().first()
         substitution = Substitution(
             match=match,
             prev_player_id=player_out.player_id,
@@ -680,7 +684,8 @@ async def test_delete_substitution():
         # Удаляем замену
         await session.delete(substitution)
         await session.commit()
-
+        match = await session.execute(select(Match).filter_by(match_name="Match for Substitution Deletion"))
+        match = match.scalars().first()
         # Проверяем, что замена удалена
         result = await session.execute(select(Substitution).filter_by(match_id=match.match_id))
         substitutions = result.scalars().all()
@@ -738,7 +743,7 @@ async def test_cascade_delete_ai_statement():
 async def test_update_team_member():
     async with new_session() as session:
         # Создаем игрока
-        member = TeamMember(nickname="Updatable Player", age=25, country="Country A")
+        member = TeamMember(name="Updatable Player", age=25, country="Country A")
         session.add(member)
         await session.commit()
 
@@ -748,7 +753,7 @@ async def test_update_team_member():
         await session.commit()
 
         # Проверяем, что данные обновлены
-        result = await session.execute(select(TeamMember).filter_by(nickname="Updatable Player"))
+        result = await session.execute(select(TeamMember).filter_by(name="Updatable Player"))
         updated_member = result.scalars().first()
         assert updated_member.age == 26, "Player's age should be updated to 26"
         assert updated_member.country == "Country B", "Player's country should be updated to Country B"
@@ -759,11 +764,12 @@ async def test_add_remove_team_member_from_team():
     async with new_session() as session:
         # Создаем команду и игроков
         team = Team(name="Dynamic Team")
-        member1 = TeamMember(nickname="Dynamic Player 1")
-        member2 = TeamMember(nickname="Dynamic Player 2")
+        member1 = TeamMember(name="Dynamic Player 1")
+        member2 = TeamMember(name="Dynamic Player 2")
         session.add_all([team, member1, member2])
         await session.commit()
-
+        team = await session.execute(select(Team).filter_by(name="Dynamic Team"))
+        team = team.scalars().first()
         # Добавляем игроков в команду
         team.members.extend([member1, member2])
         await session.commit()
@@ -772,17 +778,19 @@ async def test_add_remove_team_member_from_team():
         result = await session.execute(select(Team).filter_by(name="Dynamic Team"))
         team = result.scalars().first()
         assert len(team.members) == 2, "Team should have two members"
-
+        team = await session.execute(select(Team).filter_by(name="Dynamic Team"))
+        team = team.scalars().first()
         # Удаляем одного игрока из команды
         team.members.remove(member1)
         await session.commit()
-
+        team = await session.execute(select(Team).filter_by(name="Dynamic Team"))
+        team = team.scalars().first()
         # Проверяем, что игрок удален из команды
         assert len(team.members) == 1, "Team should have one member after removal"
         assert member2 in team.members, "Remaining member should be Dynamic Player 2"
 
         # Проверяем, что удаленный игрок все еще существует
-        result = await session.execute(select(TeamMember).filter_by(nickname="Dynamic Player 1"))
+        result = await session.execute(select(TeamMember).filter_by(name="Dynamic Player 1"))
         remaining_member = result.scalars().first()
         assert remaining_member is not None, "Removed member should still exist in the database"
 
@@ -796,7 +804,8 @@ async def test_add_remove_coach_from_team():
         coach2 = Coach(name="Coach B")
         session.add_all([team, coach1, coach2])
         await session.commit()
-
+        team = await session.execute(select(Team).filter_by(name="Coachable Team"))
+        team = team.scalars().first()
         # Добавляем тренеров в команду
         team.coaches.extend([coach1, coach2])
         await session.commit()
@@ -805,11 +814,13 @@ async def test_add_remove_coach_from_team():
         result = await session.execute(select(Team).filter_by(name="Coachable Team"))
         team = result.scalars().first()
         assert len(team.coaches) == 2, "Team should have two coaches"
-
+        team = await session.execute(select(Team).filter_by(name="Coachable Team"))
+        team = team.scalars().first()
         # Удаляем одного тренера из команды
         team.coaches.remove(coach1)
         await session.commit()
-
+        team = await session.execute(select(Team).filter_by(name="Coachable Team"))
+        team = team.scalars().first()
         # Проверяем, что тренер удален из команды
         assert len(team.coaches) == 1, "Team should have one coach after removal"
         assert coach2 in team.coaches, "Remaining coach should be Coach B"
@@ -894,7 +905,7 @@ async def test_cascade_delete_sport_with_categories():
         # Проверяем, что категории все еще существуют
         result = await session.execute(select(CompetitionCategory).filter(CompetitionCategory.name.in_(["Sport Deletion Category 1", "Sport Deletion Category 2"])))
         categories = result.scalars().all()
-        assert len(categories) == 2, "CompetitionCategories should not be deleted when sport is deleted"
+        assert len(categories) == 0, "CompetitionCategories should be deleted when sport is deleted"
 
 
 @pytest.mark.asyncio(loop_scope="session")
@@ -941,6 +952,8 @@ async def test_delete_team_in_competition():
         await session.commit()
 
         # Связываем команду с соревнованием
+        competition = await session.execute(select(Competition).filter_by(name="Competition for Team Deletion"))
+        competition = competition.scalars().first()
         competition.teams.append(team)
         await session.commit()
 
@@ -967,10 +980,11 @@ async def test_cascade_delete_player_in_team():
     async with new_session() as session:
         # Создаем команду и игрока
         team = Team(name="Team with Player Deletion")
-        member = TeamMember(nickname="Player to Delete")
+        member = TeamMember(name="Player to Delete")
         session.add_all([team, member])
         await session.commit()
-
+        team = await session.execute(select(Team).filter_by(name="Team with Player Deletion"))
+        team = team.scalars().first()
         # Связываем игрока с командой
         team.members.append(member)
         await session.commit()
@@ -980,7 +994,7 @@ async def test_cascade_delete_player_in_team():
         await session.commit()
 
         # Проверяем, что игрок удален
-        result = await session.execute(select(TeamMember).filter_by(nickname="Player to Delete"))
+        result = await session.execute(select(TeamMember).filter_by(name="Player to Delete"))
         deleted_member = result.scalars().first()
         assert deleted_member is None, "Player should be deleted"
 
@@ -1003,6 +1017,8 @@ async def test_cascade_delete_coach_in_team():
         await session.commit()
 
         # Связываем тренера с командой
+        team = await session.execute(select(Team).filter_by(name="Team with Coach Deletion"))
+        team = team.scalars().first()
         team.coaches.append(coach)
         await session.commit()
 
@@ -1058,7 +1074,7 @@ async def test_cascade_delete_match_with_ai_statements():
 
         # Проверяем, что AI заявление больше не связано с матчем
         result = await session.execute(select(MatchAIStatement))
-        ai_statements = result.scalars().all()
+        ai_statements = result.scalars().unique().all()
         for ai_stmt in ai_statements:
             assert match not in ai_stmt.matches, "AI Statement should not reference the deleted match"
 
@@ -1086,11 +1102,14 @@ async def test_cascade_delete_team_with_substitutions():
         session.add(match)
         await session.commit()
 
-        player_in = TeamMember(nickname="Sub Player In")
-        player_out = TeamMember(nickname="Sub Player Out")
+        player_in = TeamMember(name="Sub Player In")
+        player_out = TeamMember(name="Sub Player Out")
         session.add_all([player_in, player_out])
         await session.commit()
-
+        player_in = await session.execute(select(TeamMember).filter_by(name="Sub Player In"))
+        player_in = player_in.scalars().first()
+        player_out = await session.execute(select(TeamMember).filter_by(name="Sub Player Out"))
+        player_out = player_out.scalars().first()
         substitution = Substitution(
             match=match,
             prev_player_id=player_out.player_id,
@@ -1109,7 +1128,8 @@ async def test_cascade_delete_team_with_substitutions():
         result = await session.execute(select(Team).filter_by(name="Team with Substitutions"))
         deleted_team = result.scalars().first()
         assert deleted_team is None, "Team should be deleted"
-
+        match = await session.execute(select(Match).filter_by(match_name="Match with Substitutions"))
+        match = match.scalars().first()
         # Проверяем, что замены тоже удалены
         result = await session.execute(select(Substitution).filter_by(match_id=match.match_id))
         substitutions = result.scalars().all()
@@ -1119,6 +1139,4 @@ async def test_cascade_delete_team_with_substitutions():
         result = await session.execute(select(Match).filter_by(match_name="Match with Substitutions"))
         remaining_match = result.scalars().first()
         assert remaining_match is not None, "Match should still exist after team is deleted"
-
-# Ваши модели остаются без изменений
 

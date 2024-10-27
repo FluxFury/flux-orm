@@ -1,13 +1,12 @@
-from sqlalchemy import MetaData, inspect, text
+from sqlalchemy import MetaData, text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.future import select
 from flux_orm.config import DATABASE_URL
 
-async_engine = create_async_engine(DATABASE_URL, echo=True,  # Включите отладочный режим
-pool_size = 20,  # Увеличьте размер пула
-max_overflow = 30,  # Увеличьте допустимое количество дополнительных соединений
-pool_timeout = 60)  # Тайм-аут ожидания соединения
+async_engine = create_async_engine(DATABASE_URL,
+                                   pool_size=20,  # Увеличьте размер пула
+                                   max_overflow=30,  # Увеличьте допустимое количество дополнительных соединений
+                                   pool_timeout=60)  # Тайм-аут ожидания соединения
 new_session = async_sessionmaker(async_engine, expire_on_commit=True)
 
 
