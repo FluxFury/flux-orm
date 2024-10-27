@@ -4,7 +4,7 @@ from sqlalchemy import select
 from flux_orm.database import new_session
 from flux_orm.cs.models import (
     Sport, Competition, Team, TeamMember, Coach,
-    Match, MatchStatus, Substitution, CompetitionCategory, MatchAIStatement
+    Match, MatchStatus, Substitution, CompetitionCategory, MatchAIStatement, CompetitionInCategory
 )
 
 
@@ -26,6 +26,52 @@ async def test_setup_sports():
         ]
         session.add_all(sports)
         await session.commit()
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_delete_cascade_with_ondelete():
+    async with new_session() as session:
+
+        result = await session.execute(select(Sport).filter_by(name="Test Sport"))
+        sport = result.scalars().first()
+        competitions = [Competition(sport=sport, name="Competition 1"),
+                        Competition(sport=sport, name="Competition 2"),
+                        Competition(sport=sport, name="Competition 3")]
+        categories = [CompetitionCategory(name="Category 1"),
+                      CompetitionCategory(name="Category 2"),
+                      CompetitionCategory(name="Category 3")]
+
+        for competition in competitions:
+            competition.categories = categories
+        session.add_all(competitions)
+        await session.commit()
+        query = select(CompetitionInCategory)
+        result = await session.execute(query)
+        competition_in_categories_1 = result.scalars().all()
+        print(competition_in_categories_1)
+
+        for competition_in_category in competition_in_categories_1:
+            print((competition_in_category.competition_id, competition_in_category.category_id))
+
+        query2 = select(CompetitionCategory)
+        result2 = await session.execute(query2)
+        W = result2.scalars().first()
+
+        await session.delete(W)
+
+        await session.commit()
+        zapros = select(CompetitionCategory)
+        result = await session.execute(zapros)
+        print(len(result.scalars().unique().all()))
+
+        query = select(CompetitionInCategory)
+        result = await session.execute(query)
+        competition_in_categories_2 = result.scalars().unique().all()
+
+        for competition_in_category in competition_in_categories_2:
+            print((competition_in_category.competition_id, competition_in_category.category_id))
+
+        print(competition_in_categories_2)
+        assert len(competition_in_categories_2) == len(competition_in_categories_1) - 3
 
 @pytest.mark.asyncio(loop_scope="session")
 async def test_cascade_delete_competition():
@@ -300,7 +346,6 @@ async def test_cascade_delete_match():
         status = MatchStatus(name="In Progress")
         session.add(status)
         await session.commit()
-
         # Create Competition with existing sport_id
         competition = Competition(name="Competition for Deletion Test", sport=sport)
         session.add(competition)

@@ -61,9 +61,10 @@ class Competition(Model):
 
 class CompetitionInCategory(Model):
     __tablename__ = "competition_in_category"
-    competition_id: Mapped[UUID] = mapped_column(ForeignKey('competition.competition_id'), primary_key=True,
+    competition_id: Mapped[UUID] = mapped_column(ForeignKey('competition.competition_id'), primary_key=True
                                                  )
-    category_id: Mapped[UUID] = mapped_column(ForeignKey('competition_category.category_id', ondelete="CASCADE"), primary_key=True,
+    category_id: Mapped[UUID] = mapped_column(ForeignKey('competition_category.category_id', ondelete="CASCADE"),
+                                              primary_key=True
                                               )
 
 
