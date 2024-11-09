@@ -1,13 +1,15 @@
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import UniqueConstraint, TIMESTAMP
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
 from uuid6 import uuid6
 
+
 from flux_orm.database import Model
 from flux_orm.models import mapped_column, ForeignKey, UUID, Mapped
+from flux_orm.models.utils import utcnow_naive
 
 ''' Ориентировочная последовательность взаимодействия с таблицами - сверху вниз'''
 '''THESE TABLES WERE CREATED ACCORDING TO SOLID+ PRINCIPLES'''
@@ -26,6 +28,14 @@ class Sport(Model):
         lazy="joined"
     )
 
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
 
 class Competition(Model):
     __tablename__ = "competition"
@@ -63,6 +73,14 @@ class Competition(Model):
         lazy="joined"
     )
 
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
 
 class CompetitionInCategory(Model):
     __tablename__ = "competition_in_category"
@@ -86,6 +104,14 @@ class CompetitionCategory(Model):
                                                                     lazy="joined",
                                                                     passive_deletes=True)
 
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
 
 class TeamInCompetition(Model):
     __tablename__ = "team_in_competition"
@@ -142,6 +168,14 @@ class Team(Model):
     stats = mapped_column(JSONB)
     regalia = mapped_column(JSONB)
 
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
 
 class PlayerInTeam(Model):
     __tablename__ = "player_in_team"
@@ -173,6 +207,14 @@ class TeamMember(Model):
     description: Mapped[str | None]
     image_url: Mapped[str | None]
 
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
 
 class TeamInMatch(Model):
     __tablename__ = "team_in_match"
@@ -193,6 +235,14 @@ class MatchStatus(Model):
     status: Mapped[dict[str, str] | None] = mapped_column(MutableDict.as_mutable(JSONB()))
     image_url: Mapped[str | None]
 
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
 
 class Match(Model):
     __tablename__ = "match"
@@ -240,6 +290,14 @@ class Match(Model):
     planned_start_datetime: Mapped[datetime | None]
     end_datetime: Mapped[datetime | None]
 
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
 
 class AIStatementInMatch(Model):
     __tablename__ = "ai_statement_in_match"
@@ -247,6 +305,7 @@ class AIStatementInMatch(Model):
                                                primary_key=True,
                                                )
     match_id: Mapped[UUID] = mapped_column(ForeignKey('match.match_id'), primary_key=True)
+
 
 
 class MatchAIStatement(Model):
@@ -258,6 +317,14 @@ class MatchAIStatement(Model):
                                                          cascade="save-update, expunge, merge",
                                                          lazy="joined")
 
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
 
 class Coach(Model):
     __tablename__ = "coach"
@@ -273,6 +340,14 @@ class Coach(Model):
     stats = mapped_column(JSONB)
     regalia = mapped_column(JSONB)
 
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
 
 class CoachInTeam(Model):
     __tablename__ = "coach_in_team"
@@ -295,3 +370,73 @@ class Substitution(Model):
     new_player_id: Mapped[UUID] = mapped_column(ForeignKey('team_member.player_id'), primary_key=True)
     time: Mapped[int | None]
     team_id: Mapped[UUID] = mapped_column(ForeignKey('team.team_id'))
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
+
+class RawNews(Model):
+    __tablename__ = "raw_news"
+    raw_news_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
+    sport_id: Mapped[UUID] = mapped_column(ForeignKey('sport.sport_id'))
+    header: Mapped[str | None]
+    text: Mapped[list[str]] = mapped_column(MutableList.as_mutable(JSONB()))
+    url: Mapped[str]
+    news_creation_time: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=False)
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
+
+class FormattedNews(Model):
+    __tablename__ = "formatted_news"
+    formatted_news_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
+    sport_id: Mapped[UUID] = mapped_column(ForeignKey('sport.sport_id'))
+    header: Mapped[str | None]
+    text: Mapped[list[str]] = mapped_column(MutableList.as_mutable(JSONB()))
+    url: Mapped[str]
+    news_creation_time: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=False)
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
+
+class FormattedMatchedNews(Model):
+    __tablename__ = "formatted_matched_news"
+    formatted_matched_news_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
+    header: Mapped[str | None]
+    text: Mapped[list[str]] = mapped_column(MutableList.as_mutable(JSONB()))
+    url: Mapped[str]
+    news_creation_time: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=False)
+    )
+    sport_id: Mapped[UUID] = mapped_column(ForeignKey('sport.sport_id'))
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
+    )
+
+class FilteredMatchInNews(Model):
+    __tablename__ = "filtered_match_in_news"
+    match_id: Mapped[UUID] = mapped_column(ForeignKey('match.match_id'), primary_key=True)
+    news_id: Mapped[UUID] = mapped_column(ForeignKey('formatted_news.formatted_news_id'), primary_key=True)

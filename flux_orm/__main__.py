@@ -1,8 +1,8 @@
 import asyncio
 from sqlalchemy import select
 
-from flux_orm import Match, Sport
 from flux_orm.database import create_tables, new_session, force_delete_all, delete_tables
+from flux_orm.models.models import Sport
 
 
 async def main():
