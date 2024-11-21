@@ -129,6 +129,7 @@ class Team(Model):
     __tablename__ = "team"
     team_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
     name: Mapped[str] = mapped_column(unique=True)
+    pretty_name: Mapped[str | None]
     matches: Mapped[list["Match"] | None] = relationship(
         back_populates="match_teams",
         uselist=True,
@@ -144,7 +145,7 @@ class Team(Model):
         lazy="joined"
     )
     members: Mapped[list["TeamMember"] | None] = relationship(
-        back_populates="team",
+        back_populates="teams",
         uselist=True,
         cascade="save-update, expunge, merge, delete",
         secondary="player_in_team",
@@ -197,7 +198,7 @@ class TeamMember(Model):
                          name='team_member_nickname_name_image_unique'),
     )
     player_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
-    team: Mapped[list["Team"]] = relationship(
+    teams: Mapped[list["Team"]] = relationship(
         back_populates="members",
         uselist=True,
         secondary="player_in_team",
@@ -257,6 +258,7 @@ class Match(Model):
     )
     match_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
     match_name: Mapped[str]
+    pretty_match_name: Mapped[str | None]
     match_streams: Mapped[dict[str, tuple[str, str, str, str]] | None] = mapped_column(MutableDict.as_mutable(JSONB()))
     match_status: Mapped["MatchStatus"] = relationship(
         back_populates="match",
