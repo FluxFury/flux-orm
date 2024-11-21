@@ -165,8 +165,8 @@ class Team(Model):
         lazy="joined")
     description: Mapped[str | None]
     image_url: Mapped[str | None]
-    stats = mapped_column(JSONB)
-    regalia = mapped_column(JSONB)
+    stats: Mapped[dict | None] = mapped_column(MutableDict.as_mutable(JSONB()))
+    regalia: Mapped[dict | None] = mapped_column(MutableDict.as_mutable(JSONB()))
 
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=False), default=utcnow_naive()
@@ -200,7 +200,7 @@ class TeamMember(Model):
         cascade="save-update, expunge, merge",
         lazy="joined",
     )
-    name: Mapped[str] = mapped_column(unique=True)
+    name: Mapped[str] = mapped_column()
     age: Mapped[int | None]
     country: Mapped[str | None]
     stats = mapped_column(JSONB)
