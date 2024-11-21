@@ -192,6 +192,10 @@ class PlayerInTeam(Model):
 
 class TeamMember(Model):
     __tablename__ = "team_member"
+    __table_args__ = (
+        UniqueConstraint('nickname', 'name', 'image_url',
+                         name='team_member_nickname_name_image_unique'),
+    )
     player_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
     team: Mapped[list["Team"]] = relationship(
         back_populates="members",
@@ -200,7 +204,8 @@ class TeamMember(Model):
         cascade="save-update, expunge, merge",
         lazy="joined",
     )
-    name: Mapped[str] = mapped_column()
+    nickname: Mapped[str | None]
+    name: Mapped[str | None]
     age: Mapped[int | None]
     country: Mapped[str | None]
     stats = mapped_column(JSONB)
