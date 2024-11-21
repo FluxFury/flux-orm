@@ -304,10 +304,6 @@ class Match(Model):
         onupdate=utcnow_naive(),
     )
 
-class TeamLink(Model):
-    __tablename__ = "team_link"
-    link: Mapped[str] = mapped_column(primary_key=True)
-
 class AIStatementInMatch(Model):
     __tablename__ = "ai_statement_in_match"
     statement_id: Mapped[UUID] = mapped_column(ForeignKey('match_ai_statement.statement_id'),
@@ -449,3 +445,11 @@ class FilteredMatchInNews(Model):
     __tablename__ = "filtered_match_in_news"
     match_id: Mapped[UUID] = mapped_column(ForeignKey('match.match_id'), primary_key=True)
     news_id: Mapped[UUID] = mapped_column(ForeignKey('formatted_news.formatted_news_id'), primary_key=True)
+
+class TeamLink(Model):
+    __tablename__ = "team_link"
+    link: Mapped[str] = mapped_column(primary_key=True)
+
+class PlayerLink(Model):
+    __tablename__ = "player_link"
+    link: Mapped[str] = mapped_column(primary_key=True)
