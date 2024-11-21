@@ -299,6 +299,10 @@ class Match(Model):
         onupdate=utcnow_naive(),
     )
 
+class TeamLink(Model):
+    __tablename__ = "team_link"
+    link: Mapped[str] = mapped_column(primary_key=True)
+
 class AIStatementInMatch(Model):
     __tablename__ = "ai_statement_in_match"
     statement_id: Mapped[UUID] = mapped_column(ForeignKey('match_ai_statement.statement_id'),
