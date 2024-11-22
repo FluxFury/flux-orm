@@ -6,8 +6,7 @@ from flux_orm.config import DATABASE_URL
 async_engine = create_async_engine(DATABASE_URL,
                                    pool_size=20,  # Увеличьте размер пула
                                    max_overflow=30,  # Увеличьте допустимое количество дополнительных соединений
-                                   pool_timeout=60,
-                                   echo=True)  # Тайм-аут ожидания соединения
+                                   pool_timeout=60)  # Тайм-аут ожидания соединения
 new_session = async_sessionmaker(async_engine, expire_on_commit=True)
 
 
