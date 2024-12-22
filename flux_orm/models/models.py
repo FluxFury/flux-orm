@@ -25,7 +25,7 @@ class Sport(Model):
         back_populates="sport",
         uselist=True,
         cascade="save-update, expunge, merge, delete",
-        lazy="joined"
+        
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -50,27 +50,27 @@ class Competition(Model):
     sport: Mapped["Sport"] = relationship(
         back_populates="competitions",
         cascade="save-update, expunge, merge",
-        lazy="joined"
+        
     )
     matches: Mapped[list["Match"] | None] = relationship(
         back_populates="competition",
         uselist=True,
         cascade="save-update, expunge, merge, delete",
-        lazy="joined",
+
     )
     categories: Mapped[list["CompetitionCategory"] | None] = relationship(
         back_populates="competitions",
         uselist=True,
         secondary="competition_in_category",
         cascade="save-update, expunge, merge, delete",
-        lazy="joined",
+
     )
     teams: Mapped[list["Team"] | None] = relationship(
         back_populates="competitions",
         uselist=True,
         secondary="team_in_competition",
         cascade="save-update, expunge, merge",
-        lazy="joined"
+        
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -101,7 +101,7 @@ class CompetitionCategory(Model):
                                                                     uselist=True,
                                                                     secondary="competition_in_category",
                                                                     cascade="save-update, expunge, merge",
-                                                                    lazy="joined",
+                                                            
                                                                     passive_deletes=True)
 
     created_at: Mapped[datetime] = mapped_column(
@@ -135,21 +135,21 @@ class Team(Model):
         uselist=True,
         secondary="team_in_match",
         cascade="save-update, expunge, merge",
-        lazy="joined"
+        
     )
     competitions: Mapped[list["Competition"] | None] = relationship(
         back_populates="teams",
         uselist=True,
         secondary="team_in_competition",
         cascade="save-update, expunge, merge",
-        lazy="joined"
+        
     )
     members: Mapped[list["TeamMember"] | None] = relationship(
         back_populates="teams",
         uselist=True,
         cascade="save-update, expunge, merge, delete",
         secondary="player_in_team",
-        lazy="joined",
+
 
     )
     coaches: Mapped[list["Coach"] | None] = relationship(
@@ -157,13 +157,13 @@ class Team(Model):
         uselist=True,
         secondary="coach_in_team",
         cascade="save-update, expunge, merge",
-        lazy="joined"
+        
     )
     substitutions: Mapped[list["Substitution"] | None] = relationship(
         back_populates="team",
         uselist=True,
         cascade="save-update, expunge, merge, delete",
-        lazy="joined")
+        )
     description: Mapped[str | None]
     image_url: Mapped[str | None]
     stats: Mapped[dict | None] = mapped_column(MutableDict.as_mutable(JSONB()))
@@ -203,7 +203,7 @@ class TeamMember(Model):
         uselist=True,
         secondary="player_in_team",
         cascade="save-update, expunge, merge",
-        lazy="joined",
+
     )
     nickname: Mapped[str | None]
     name: Mapped[str | None]
@@ -236,7 +236,7 @@ class MatchStatus(Model):
     match: Mapped["Match"] = relationship(back_populates="match_status",
                                           uselist=False,
                                           cascade="save-update, expunge, merge",
-                                          lazy="joined")
+                                          )
     name: Mapped[str]
     status: Mapped[dict[str, str] | None] = mapped_column(MutableDict.as_mutable(JSONB()))
     image_url: Mapped[str | None]
@@ -264,34 +264,34 @@ class Match(Model):
         back_populates="match",
         uselist=False,
         cascade="save-update, expunge, merge",
-        lazy="joined"
+        
     )
     match_teams: Mapped[list["Team"] | None] = relationship(
         back_populates="matches",
         uselist=True,
         secondary="team_in_match",
         cascade="save-update, expunge, merge",
-        lazy="joined"
+        
     )
     ai_statements: Mapped[list["MatchAIStatement"] | None] = relationship(
         back_populates="matches",
         uselist=True,
         secondary="ai_statement_in_match",
         cascade="save-update, expunge, merge",
-        lazy="joined"
+        
     )
     substitutions: Mapped[list["Substitution"] | None] = relationship(
         back_populates="match",
         uselist=True,
         cascade="save-update, expunge, merge, delete",
-        lazy="joined"
+        
     )
     competition_id: Mapped[UUID | None] = mapped_column(ForeignKey('competition.competition_id'))
     competition: Mapped["Competition"] = relationship(
         back_populates="matches",
         uselist=False,
         cascade="save-update, expunge, merge",
-        lazy="joined"
+        
     )
     status_id: Mapped[UUID | None] = mapped_column(ForeignKey('match_status.status_id'))
     planned_start_datetime: Mapped[datetime | None]
@@ -322,7 +322,7 @@ class MatchAIStatement(Model):
                                                          uselist=True,
                                                          secondary="ai_statement_in_match",
                                                          cascade="save-update, expunge, merge",
-                                                         lazy="joined")
+                                                         )
 
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=False), default=utcnow_naive()
@@ -343,7 +343,7 @@ class Coach(Model):
                                                       uselist=True,
                                                       secondary="coach_in_team",
                                                       cascade="save-update, expunge, merge",
-                                                      lazy="joined")
+                                                      )
     stats = mapped_column(JSONB)
     regalia = mapped_column(JSONB)
 
@@ -368,11 +368,11 @@ class Substitution(Model):
     match: Mapped["Match"] = relationship(back_populates="substitutions",
                                           uselist=False,
                                           cascade="save-update, expunge, merge",
-                                          lazy="joined")
+                                          )
     team: Mapped["Team"] = relationship(back_populates="substitutions",
                                         uselist=False,
                                         cascade="save-update, expunge, merge",
-                                        lazy="joined")
+                                        )
     prev_player_id: Mapped[UUID] = mapped_column(ForeignKey('team_member.player_id'), primary_key=True)
     new_player_id: Mapped[UUID] = mapped_column(ForeignKey('team_member.player_id'), primary_key=True)
     time: Mapped[int | None]

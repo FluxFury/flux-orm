@@ -1,12 +1,63 @@
+import pathlib
+
+import pydantic
+import pydantic_settings
+import sqlalchemy.engine.url as sa_url
 from dotenv import load_dotenv
-import os
 
-load_dotenv(override=True)
+ROOT_DIR = pathlib.Path(__file__).resolve().parent.parent
+DOTENV_PATH = ROOT_DIR / ".env"
+load_dotenv(dotenv_path=DOTENV_PATH, override=True)
 
-DB_HOST = os.environ.get("DB_HOST")
-DB_PORT = os.environ.get("DB_PORT")
-DB_NAME = os.environ.get("DB_NAME")
-DB_USER = os.environ.get("DB_USER")
-DB_PASS = os.environ.get("DB_PASS")
 
-DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+class PostgreSQLConnectionSettings(pydantic_settings.BaseSettings):
+    """PostgreSQL connection settings."""
+
+    DB_NAME: pydantic.SecretStr
+    DB_HOST: pydantic.SecretStr
+    DB_MIGRATION_HOST: pydantic.SecretStr
+    DB_PORT: pydantic.SecretStr
+    DB_USER: pydantic.SecretStr
+    DB_PASS: pydantic.SecretStr
+
+    IS_ECHO: bool = False
+
+    @property
+    def async_url(self) -> sa_url.URL:
+        """Create an async URL for the PostgreSQL connection."""
+        return sa_url.URL.create(
+            drivername="postgresql+asyncpg",
+            database=self.DB_NAME.get_secret_value(),
+            username=self.DB_USER.get_secret_value(),
+            password=self.DB_PASS.get_secret_value(),
+            host=self.DB_HOST.get_secret_value(),
+            port=int(self.DB_PORT.get_secret_value()),
+        )
+
+    @property
+    def migration_async_url(self) -> sa_url.URL:
+        """Create an async URL for the PostgreSQL connection."""
+        return sa_url.URL.create(
+            drivername="postgresql+asyncpg",
+            database=self.DB_NAME.get_secret_value(),
+            username=self.DB_USER.get_secret_value(),
+            password=self.DB_PASS.get_secret_value(),
+            host=self.DB_MIGRATION_HOST.get_secret_value(),
+            port=int(self.DB_PORT.get_secret_value()),
+        )
+
+    @property
+    def sync_url(self) -> sa_url.URL:
+        """Create a sync URL for the PostgreSQL connection."""
+        return sa_url.URL.create(
+            drivername="postgresql",
+            database=self.DB_NAME.get_secret_value(),
+            username=self.DB_USER.get_secret_value(),
+            password=self.DB_PASS.get_secret_value(),
+            host=self.DB_MIGRATION_HOST.get_secret_value(),
+            port=int(self.DB_PORT.get_secret_value()),
+        )
+
+
+
+postgresql_connection_settings = PostgreSQLConnectionSettings()

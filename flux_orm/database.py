@@ -1,12 +1,20 @@
-from sqlalchemy import MetaData, text
+from sqlalchemy import MetaData, create_engine, text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase
-from flux_orm.config import DATABASE_URL
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-async_engine = create_async_engine(DATABASE_URL,
-                                   pool_size=20,  # Увеличьте размер пула
-                                   max_overflow=30,  # Увеличьте допустимое количество дополнительных соединений
-                                   pool_timeout=60)  # Тайм-аут ожидания соединения
+from flux_orm.config import postgresql_connection_settings
+
+sync_engine = create_engine(postgresql_connection_settings.sync_url)
+
+new_sync_session = sessionmaker(sync_engine, expire_on_commit=True)
+
+
+async_engine = create_async_engine(
+    postgresql_connection_settings.async_url,
+    pool_size=20,
+    max_overflow=30,
+    pool_timeout=60,
+)
 new_session = async_sessionmaker(async_engine, expire_on_commit=True)
 
 
@@ -25,10 +33,10 @@ async def create_tables():
 
 async def force_delete_all():
     async with async_engine.begin() as conn:
-        # Удаляем все объекты в схеме public
         await conn.execute(text("DROP SCHEMA public CASCADE;"))
-        # Создаем схему public заново
         await conn.execute(text("CREATE SCHEMA public;"))
+        await conn.execute(text("GRANT ALL ON SCHEMA public TO your_user;"))
+        await conn.execute(text("GRANT ALL ON SCHEMA public TO public;"))
 
 
 async def delete_tables():
