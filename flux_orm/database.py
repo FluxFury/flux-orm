@@ -35,8 +35,6 @@ async def force_delete_all():
     async with async_engine.begin() as conn:
         await conn.execute(text("DROP SCHEMA public CASCADE;"))
         await conn.execute(text("CREATE SCHEMA public;"))
-        await conn.execute(text("GRANT ALL ON SCHEMA public TO your_user;"))
-        await conn.execute(text("GRANT ALL ON SCHEMA public TO public;"))
 
 
 async def delete_tables():
