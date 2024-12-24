@@ -275,6 +275,7 @@ class Match(Model):
         MutableDict.as_mutable(JSONB())
     )
     match_url: Mapped[str | None]
+    external_id: Mapped[str | None]
     match_status: Mapped["MatchStatus"] = relationship(
         back_populates="match",
         uselist=False,
