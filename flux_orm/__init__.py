@@ -19,8 +19,6 @@ from flux_orm.models.models import (
     FormattedNews,
     FormattedMatchedNews,
     FilteredMatchInNews,
-    TeamLink,
-    PlayerLink,
 )
 
 __all__ = [
@@ -44,6 +42,4 @@ __all__ = [
     "FormattedNews",
     "FormattedMatchedNews",
     "FilteredMatchInNews",
-    "TeamLink",
-    "PlayerLink",
 ]

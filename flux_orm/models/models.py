@@ -26,6 +26,12 @@ class Sport(Model):
         uselist=True,
         cascade="save-update, expunge, merge, delete",
     )
+    matches: Mapped[list["Match"] | None] = relationship(
+        back_populates="sport",
+        uselist=True,
+        cascade="save-update, expunge, merge",
+    )
+
 
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=False), default=utcnow_naive()
@@ -131,6 +137,7 @@ class Team(Model):
     team_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
     name: Mapped[str] = mapped_column(unique=True)
     pretty_name: Mapped[str | None]
+    team_url: Mapped[str | None]
     matches: Mapped[list["Match"] | None] = relationship(
         back_populates="match_teams",
         uselist=True,
@@ -201,6 +208,7 @@ class TeamMember(Model):
         ),
     )
     player_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
+    team_member_url: Mapped[str | None]
     teams: Mapped[list["Team"]] = relationship(
         back_populates="members",
         uselist=True,
@@ -269,13 +277,20 @@ class Match(Model):
         ),
     )
     match_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
+    sport_id: Mapped[UUID] = mapped_column(ForeignKey("sport.sport_id"))
     match_name: Mapped[str]
     pretty_match_name: Mapped[str | None]
     match_streams: Mapped[dict[str, tuple[str, str, str, str]] | None] = mapped_column(
         MutableDict.as_mutable(JSONB())
     )
     match_url: Mapped[str | None]
-    external_id: Mapped[str | None]
+    tournament_url: Mapped[str | None]
+    external_id: Mapped[str] = mapped_column(unique=True)
+    sport: Mapped["Sport"] = relationship(
+        back_populates="matches",
+        uselist=False,
+        cascade="save-update, expunge, merge",
+    )
     match_status: Mapped["MatchStatus"] = relationship(
         back_populates="match",
         uselist=False,
@@ -489,11 +504,3 @@ class FilteredMatchInNews(Model):
     )
 
 
-class TeamLink(Model):
-    __tablename__ = "team_link"
-    link: Mapped[str] = mapped_column(primary_key=True)
-
-
-class PlayerLink(Model):
-    __tablename__ = "player_link"
-    link: Mapped[str] = mapped_column(primary_key=True)
