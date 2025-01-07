@@ -8,7 +8,6 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 SQLAlchemy = "^2.0.34"
-uvicorn = "^0.15.0"
 python-dotenv = "^1.0.1"
 uuid6 = "^2024.7.10"
 pytest-sqlalchemy = "^0.2.1"
