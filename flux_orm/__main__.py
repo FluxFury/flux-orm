@@ -1,18 +1,21 @@
 import asyncio
-from sqlalchemy import select
+from flux_orm.database import create_tables, delete_tables
 
-from flux_orm.database import create_tables, new_session, force_delete_all, delete_tables
-from flux_orm.models.models import Sport
+from flux_orm.database import new_session
+from flux_orm import Sport
 
+
+async def add_cs_sport():
+    async with new_session() as session:
+        cs = Sport(name="CS2", description="Counter-Strike 2")
+        session.add(cs)
+        await session.commit()
 
 async def main():
-    await force_delete_all()
+    await delete_tables()
     await create_tables()
-    async with new_session() as session:
-        async with session.begin():
-            cs = Sport(name="CS2", description="Counter-Strike 2")
-            session.add(cs)
+    await add_cs_sport()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())
