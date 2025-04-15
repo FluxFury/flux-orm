@@ -458,31 +458,10 @@ class FormattedNews(Model):
     header: Mapped[str | None]
     text: Mapped[list[str]] = mapped_column(MutableList.as_mutable(JSONB()))
     url: Mapped[str]
+    keywords: Mapped[list[str]] = mapped_column(MutableList.as_mutable(JSONB()))
     news_creation_time: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=False)
     )
-    created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=False), default=utcnow_naive()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=False),
-        default=utcnow_naive(),
-        onupdate=utcnow_naive(),
-    )
-
-
-class FormattedMatchedNews(Model):
-    __tablename__ = "formatted_matched_news"
-    formatted_matched_news_id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=uuid6
-    )
-    header: Mapped[str | None]
-    text: Mapped[list[str]] = mapped_column(MutableList.as_mutable(JSONB()))
-    url: Mapped[str]
-    news_creation_time: Mapped[datetime | None] = mapped_column(
-        TIMESTAMP(timezone=False)
-    )
-    sport_id: Mapped[UUID] = mapped_column(ForeignKey("sport.sport_id"))
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=False), default=utcnow_naive()
     )
@@ -500,4 +479,13 @@ class FilteredMatchInNews(Model):
     )
     news_id: Mapped[UUID] = mapped_column(
         ForeignKey("formatted_news.formatted_news_id"), primary_key=True
+    )
+    respective_relevance: Mapped[int]
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False), default=utcnow_naive()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=False),
+        default=utcnow_naive(),
+        onupdate=utcnow_naive(),
     )

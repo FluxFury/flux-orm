@@ -17,7 +17,6 @@ from flux_orm.models.models import (
     Substitution,
     RawNews,
     FormattedNews,
-    FormattedMatchedNews,
     FilteredMatchInNews,
 )
 
@@ -40,6 +39,5 @@ __all__ = [
     "Substitution",
     "RawNews",
     "FormattedNews",
-    "FormattedMatchedNews",
     "FilteredMatchInNews",
 ]
