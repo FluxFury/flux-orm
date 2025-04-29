@@ -1,8 +1,8 @@
-"""Initial commit
+"""Initial migration
 
-Revision ID: 1732dcb7ab52
+Revision ID: b8cd3826cfcc
 Revises: 
-Create Date: 2024-12-21 20:17:11.108076
+Create Date: 2025-04-29 23:17:58.557812
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '1732dcb7ab52'
+revision: str = 'b8cd3826cfcc'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -55,10 +55,6 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
     sa.PrimaryKeyConstraint('status_id')
     )
-    op.create_table('player_link',
-    sa.Column('link', sa.String(), nullable=False),
-    sa.PrimaryKeyConstraint('link')
-    )
     op.create_table('sport',
     sa.Column('sport_id', sa.Uuid(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
@@ -73,6 +69,7 @@ def upgrade() -> None:
     sa.Column('team_id', sa.Uuid(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('pretty_name', sa.String(), nullable=True),
+    sa.Column('team_url', sa.String(), nullable=True),
     sa.Column('description', sa.String(), nullable=True),
     sa.Column('image_url', sa.String(), nullable=True),
     sa.Column('stats', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
@@ -82,12 +79,9 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('team_id'),
     sa.UniqueConstraint('name')
     )
-    op.create_table('team_link',
-    sa.Column('link', sa.String(), nullable=False),
-    sa.PrimaryKeyConstraint('link')
-    )
     op.create_table('team_member',
     sa.Column('player_id', sa.Uuid(), nullable=False),
+    sa.Column('team_member_url', sa.String(), nullable=True),
     sa.Column('stats', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('nickname', sa.String(), nullable=True),
     sa.Column('name', sa.String(), nullable=True),
@@ -122,24 +116,13 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('competition_id'),
     sa.UniqueConstraint('name')
     )
-    op.create_table('formatted_matched_news',
-    sa.Column('formatted_matched_news_id', sa.Uuid(), nullable=False),
-    sa.Column('header', sa.String(), nullable=True),
-    sa.Column('text', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-    sa.Column('url', sa.String(), nullable=False),
-    sa.Column('news_creation_time', sa.TIMESTAMP(), nullable=True),
-    sa.Column('sport_id', sa.Uuid(), nullable=False),
-    sa.Column('created_at', sa.TIMESTAMP(), nullable=False),
-    sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
-    sa.ForeignKeyConstraint(['sport_id'], ['sport.sport_id'], ),
-    sa.PrimaryKeyConstraint('formatted_matched_news_id')
-    )
     op.create_table('formatted_news',
     sa.Column('formatted_news_id', sa.Uuid(), nullable=False),
     sa.Column('sport_id', sa.Uuid(), nullable=False),
     sa.Column('header', sa.String(), nullable=True),
     sa.Column('text', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('url', sa.String(), nullable=False),
+    sa.Column('keywords', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('news_creation_time', sa.TIMESTAMP(), nullable=True),
     sa.Column('created_at', sa.TIMESTAMP(), nullable=False),
     sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
@@ -160,6 +143,8 @@ def upgrade() -> None:
     sa.Column('text', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('url', sa.String(), nullable=False),
     sa.Column('news_creation_time', sa.TIMESTAMP(), nullable=True),
+    sa.Column('pipeline_status', sa.Enum('NEW', 'SENT', 'PROCESSED', 'ERROR', name='pipelinestatus'), nullable=False),
+    sa.Column('pipeline_update_time', sa.TIMESTAMP(), nullable=True),
     sa.Column('created_at', sa.TIMESTAMP(), nullable=False),
     sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
     sa.ForeignKeyConstraint(['sport_id'], ['sport.sport_id'], ),
@@ -174,9 +159,13 @@ def upgrade() -> None:
     )
     op.create_table('match',
     sa.Column('match_id', sa.Uuid(), nullable=False),
+    sa.Column('sport_id', sa.Uuid(), nullable=False),
     sa.Column('match_name', sa.String(), nullable=False),
     sa.Column('pretty_match_name', sa.String(), nullable=True),
     sa.Column('match_streams', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('match_url', sa.String(), nullable=True),
+    sa.Column('tournament_url', sa.String(), nullable=True),
+    sa.Column('external_id', sa.String(), nullable=False),
     sa.Column('competition_id', sa.Uuid(), nullable=True),
     sa.Column('status_id', sa.Uuid(), nullable=True),
     sa.Column('planned_start_datetime', sa.DateTime(), nullable=True),
@@ -184,8 +173,10 @@ def upgrade() -> None:
     sa.Column('created_at', sa.TIMESTAMP(), nullable=False),
     sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
     sa.ForeignKeyConstraint(['competition_id'], ['competition.competition_id'], ),
+    sa.ForeignKeyConstraint(['sport_id'], ['sport.sport_id'], ),
     sa.ForeignKeyConstraint(['status_id'], ['match_status.status_id'], ),
     sa.PrimaryKeyConstraint('match_id'),
+    sa.UniqueConstraint('external_id'),
     sa.UniqueConstraint('match_name', 'planned_start_datetime', name='match_name_planned_start_datetime_unique')
     )
     op.create_table('team_in_competition',
@@ -207,6 +198,9 @@ def upgrade() -> None:
     op.create_table('filtered_match_in_news',
     sa.Column('match_id', sa.Uuid(), nullable=False),
     sa.Column('news_id', sa.Uuid(), nullable=False),
+    sa.Column('respective_relevance', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.TIMESTAMP(), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
     sa.ForeignKeyConstraint(['match_id'], ['match.match_id'], ),
     sa.ForeignKeyConstraint(['news_id'], ['formatted_news.formatted_news_id'], ),
     sa.PrimaryKeyConstraint('match_id', 'news_id')
@@ -249,14 +243,11 @@ def downgrade() -> None:
     op.drop_table('raw_news')
     op.drop_table('player_in_team')
     op.drop_table('formatted_news')
-    op.drop_table('formatted_matched_news')
     op.drop_table('competition')
     op.drop_table('coach_in_team')
     op.drop_table('team_member')
-    op.drop_table('team_link')
     op.drop_table('team')
     op.drop_table('sport')
-    op.drop_table('player_link')
     op.drop_table('match_status')
     op.drop_table('match_ai_statement')
     op.drop_table('competition_category')

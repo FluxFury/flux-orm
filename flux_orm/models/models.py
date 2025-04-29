@@ -10,7 +10,7 @@ from uuid6 import uuid6
 from flux_orm.database import Model
 from flux_orm.models import mapped_column, ForeignKey, UUID, Mapped
 from flux_orm.models.utils import utcnow_naive
-
+from flux_orm.models.enums import PipelineStatus
 """ Ориентировочная последовательность взаимодействия с таблицами - сверху вниз"""
 """THESE TABLES WERE CREATED ACCORDING TO SOLID+ PRINCIPLES"""
 
@@ -439,6 +439,10 @@ class RawNews(Model):
     text: Mapped[list[str]] = mapped_column(MutableList.as_mutable(JSONB()))
     url: Mapped[str]
     news_creation_time: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=False)
+    )
+    pipeline_status: Mapped[PipelineStatus]
+    pipeline_update_time: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=False)
     )
     created_at: Mapped[datetime] = mapped_column(
