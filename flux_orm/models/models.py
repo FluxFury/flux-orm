@@ -284,6 +284,10 @@ class Match(Model):
     )
     match_url: Mapped[str | None]
     tournament_url: Mapped[str | None]
+    pipeline_status: Mapped[PipelineStatus]
+    pipeline_update_time: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=False)
+    )
     external_id: Mapped[str] = mapped_column(unique=True)
     sport: Mapped["Sport"] = relationship(
         back_populates="matches",
