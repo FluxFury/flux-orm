@@ -284,7 +284,7 @@ class Match(Model):
     )
     match_url: Mapped[str | None]
     tournament_url: Mapped[str | None]
-    pipeline_status: Mapped[PipelineStatus]
+    pipeline_status: Mapped[PipelineStatus | None]
     pipeline_update_time: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=False)
     )
@@ -445,7 +445,7 @@ class RawNews(Model):
     news_creation_time: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=False)
     )
-    pipeline_status: Mapped[PipelineStatus]
+    pipeline_status: Mapped[PipelineStatus | None]
     pipeline_update_time: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=False)
     )
