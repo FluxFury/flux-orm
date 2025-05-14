@@ -324,6 +324,12 @@ class Match(Model):
         uselist=False,
         cascade="save-update, expunge, merge",
     )
+    formatted_news: Mapped[list["FormattedNews"] | None] = relationship(
+        back_populates="relevant_matches",
+        uselist=True,
+        secondary="filtered_match_in_news",
+        cascade="save-update, expunge, merge",
+    )
     status_id: Mapped[UUID | None] = mapped_column(ForeignKey("match_status.status_id"))
     planned_start_datetime: Mapped[datetime | None]
     end_datetime: Mapped[datetime | None]
@@ -470,6 +476,12 @@ class FormattedNews(Model):
     news_creation_time: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=False)
     )
+    relevant_matches: Mapped[list["Match"] | None] = relationship(
+        back_populates="formatted_news",
+        uselist=True,
+        secondary="filtered_match_in_news",
+        cascade="save-update, expunge, merge",
+    )
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=False), default=utcnow_naive()
     )
@@ -489,6 +501,7 @@ class FilteredMatchInNews(Model):
         ForeignKey("formatted_news.formatted_news_id"), primary_key=True
     )
     respective_relevance: Mapped[int | None]
+
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=False), default=utcnow_naive()
     )
