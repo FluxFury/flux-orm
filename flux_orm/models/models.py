@@ -488,7 +488,7 @@ class FilteredMatchInNews(Model):
     news_id: Mapped[UUID] = mapped_column(
         ForeignKey("formatted_news.formatted_news_id"), primary_key=True
     )
-    respective_relevance: Mapped[int]
+    respective_relevance: Mapped[int | None]
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=False), default=utcnow_naive()
     )
