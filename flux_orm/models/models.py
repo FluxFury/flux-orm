@@ -470,7 +470,7 @@ class FormattedNews(Model):
     formatted_news_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid6)
     sport_id: Mapped[UUID] = mapped_column(ForeignKey("sport.sport_id"))
     header: Mapped[str | None]
-    text: Mapped[list[str]] = mapped_column(MutableList.as_mutable(JSONB()))
+    text: Mapped[str]
     url: Mapped[str]
     keywords: Mapped[list[str]] = mapped_column(MutableList.as_mutable(JSONB()))
     news_creation_time: Mapped[datetime | None] = mapped_column(
