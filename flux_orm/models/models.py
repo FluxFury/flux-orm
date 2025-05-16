@@ -470,7 +470,7 @@ class FormattedNews(Model):
     header: Mapped[str | None]
     text: Mapped[str]
     url: Mapped[str]
-    keywords: Mapped[list[str]] = mapped_column(MutableList.as_mutable(JSONB()))
+    keywords: Mapped[dict[str, list[str]]] = mapped_column(MutableDict.as_mutable(JSONB()))
     news_creation_time: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=False)
     )

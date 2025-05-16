@@ -1,8 +1,8 @@
-"""Initial migration
+"""initial migration
 
-Revision ID: b8cd3826cfcc
+Revision ID: 05431a48a4f8
 Revises: 
-Create Date: 2025-04-29 23:17:58.557812
+Create Date: 2025-05-16 21:00:21.405501
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'b8cd3826cfcc'
+revision: str = '05431a48a4f8'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -48,7 +48,7 @@ def upgrade() -> None:
     )
     op.create_table('match_status',
     sa.Column('status_id', sa.Uuid(), nullable=False),
-    sa.Column('name', sa.String(), nullable=False),
+    sa.Column('name', sa.Enum('SCHEDULED', 'LIVE', 'FINISHED', 'CANCELLED', 'POSTPONED', name='matchstatusenum'), nullable=False),
     sa.Column('status', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('image_url', sa.String(), nullable=True),
     sa.Column('created_at', sa.TIMESTAMP(), nullable=False),
@@ -120,7 +120,7 @@ def upgrade() -> None:
     sa.Column('formatted_news_id', sa.Uuid(), nullable=False),
     sa.Column('sport_id', sa.Uuid(), nullable=False),
     sa.Column('header', sa.String(), nullable=True),
-    sa.Column('text', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('text', sa.String(), nullable=False),
     sa.Column('url', sa.String(), nullable=False),
     sa.Column('keywords', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('news_creation_time', sa.TIMESTAMP(), nullable=True),
@@ -143,7 +143,7 @@ def upgrade() -> None:
     sa.Column('text', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('url', sa.String(), nullable=False),
     sa.Column('news_creation_time', sa.TIMESTAMP(), nullable=True),
-    sa.Column('pipeline_status', sa.Enum('NEW', 'SENT', 'PROCESSED', 'ERROR', name='pipelinestatus'), nullable=False),
+    sa.Column('pipeline_status', sa.Enum('NEW', 'SENT', 'PROCESSED', 'ERROR', name='pipelinestatus'), nullable=True),
     sa.Column('pipeline_update_time', sa.TIMESTAMP(), nullable=True),
     sa.Column('created_at', sa.TIMESTAMP(), nullable=False),
     sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
@@ -165,6 +165,8 @@ def upgrade() -> None:
     sa.Column('match_streams', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('match_url', sa.String(), nullable=True),
     sa.Column('tournament_url', sa.String(), nullable=True),
+    sa.Column('pipeline_status', sa.Enum('NEW', 'SENT', 'PROCESSED', 'ERROR', name='pipelinestatus'), nullable=True),
+    sa.Column('pipeline_update_time', sa.TIMESTAMP(), nullable=True),
     sa.Column('external_id', sa.String(), nullable=False),
     sa.Column('competition_id', sa.Uuid(), nullable=True),
     sa.Column('status_id', sa.Uuid(), nullable=True),
@@ -198,7 +200,7 @@ def upgrade() -> None:
     op.create_table('filtered_match_in_news',
     sa.Column('match_id', sa.Uuid(), nullable=False),
     sa.Column('news_id', sa.Uuid(), nullable=False),
-    sa.Column('respective_relevance', sa.Integer(), nullable=False),
+    sa.Column('respective_relevance', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.TIMESTAMP(), nullable=False),
     sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
     sa.ForeignKeyConstraint(['match_id'], ['match.match_id'], ),
