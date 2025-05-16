@@ -10,9 +10,7 @@ from uuid6 import uuid6
 from flux_orm.database import Model
 from flux_orm.models import mapped_column, ForeignKey, UUID, Mapped
 from flux_orm.models.utils import utcnow_naive
-from flux_orm.models.enums import PipelineStatus
-""" Ориентировочная последовательность взаимодействия с таблицами - сверху вниз"""
-"""THESE TABLES WERE CREATED ACCORDING TO SOLID+ PRINCIPLES"""
+from flux_orm.models.enums import PipelineStatus, MatchStatusEnum
 
 
 class Sport(Model):
@@ -250,7 +248,7 @@ class MatchStatus(Model):
         uselist=False,
         cascade="save-update, expunge, merge",
     )
-    name: Mapped[str]
+    name: Mapped[MatchStatusEnum]
     status: Mapped[dict[str, str] | None] = mapped_column(
         MutableDict.as_mutable(JSONB())
     )

@@ -22,3 +22,11 @@ class PipelineStatus(CustomStrEnum):
     SENT = "sent"
     PROCESSED = "processed"
     ERROR = "error"
+
+@enum.unique
+class MatchStatusEnum(CustomStrEnum):
+    SCHEDULED = "scheduled"
+    LIVE = "live"
+    FINISHED = "finished"
+    CANCELLED = "cancelled"
+    POSTPONED = "postponed"
