@@ -9,12 +9,13 @@ class CustomStrEnum(enum.StrEnum):
         value = str(value).lower()
         for member in cls:
             if all((
-                    hasattr(member, "value"),
-                    isinstance(member.value, str),
-                    member.value.lower() == value,
+                hasattr(member, "value"),
+                isinstance(member.value, str),
+                member.value.lower() == value,
             )):
                 return member
         return None
+
 
 @enum.unique
 class PipelineStatus(CustomStrEnum):
@@ -22,6 +23,7 @@ class PipelineStatus(CustomStrEnum):
     SENT = "sent"
     PROCESSED = "processed"
     ERROR = "error"
+
 
 @enum.unique
 class MatchStatusEnum(CustomStrEnum):

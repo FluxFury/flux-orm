@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 import uuid
+
+
 def utcnow_naive():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 

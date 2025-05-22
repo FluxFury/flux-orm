@@ -11,6 +11,7 @@ async def add_cs_sport():
         session.add(cs)
         await session.commit()
 
+
 async def main():
     await delete_tables()
     await create_tables()
